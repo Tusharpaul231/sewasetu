@@ -1,0 +1,8 @@
+seed/
+logs/
+*.mp3
+.env
+__pycache__/
+.pytest_cache/
+backups/
+BRIEF.md
