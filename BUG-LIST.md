@@ -5,7 +5,7 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 1 | The "closes in N hours" countdown used server time (UTC in the container), so it was off by 5.5 hours. | Open |
+| 1 | The "closes in N hours" countdown used server time (UTC in the container), so it was off by 5.5 hours. | Fixed |
 | 2 | The text says "above 60", but the rule is 60 or older. | Open |
 
 ## `/apply` (mobile and OTP request)
