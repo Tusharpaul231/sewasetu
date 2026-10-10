@@ -1,0 +1,27 @@
+name: tests
+on: [push, pull_request]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: sewasetu
+          POSTGRES_PASSWORD: sewasetu123
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sewasetu"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: System font for the Assamese PDF test
+        run: sudo apt-get update && sudo apt-get install -y fonts-lohit-beng-assamese
+      - name: Install dependencies
+        run: pip install flask==2.2.5 werkzeug==2.2.3 psycopg2-binary requests fpdf2==2.7.9 uharfbuzz pytest pypdf
+      - name: Run tests
+        run: pytest -q
