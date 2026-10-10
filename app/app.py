@@ -13,7 +13,7 @@ import csv
 import random
 import hashlib
 import configparser
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 import requests
 import psycopg2
@@ -86,16 +86,21 @@ def send_sms(mobile, text):
     except Exception as e:
         app.logger.error("sms gateway error: %s" % e)
 
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def now_ist():
+    """Current Indian Standard Time as a naive datetime (same style the DB stores)."""
+    return datetime.now(IST).replace(tzinfo=None)
 
 def deadline_remaining():
-    delta = SCHEME_DEADLINE - datetime.now()
+    delta = SCHEME_DEADLINE - now_ist()
     if delta.total_seconds() <= 0:
         return None
     return int(delta.total_seconds() // 3600)
 
 
 def new_application_no():
-    return "SSP" + datetime.now().strftime("%y") + str(random.randint(100000, 999999))
+    return "SSP" + now_ist().strftime("%y") + str(random.randint(100000, 999999))
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +151,7 @@ def apply():
         conn = get_db()
         cur = conn.cursor()
         cur.execute("INSERT INTO otps (mobile, code, created_at) VALUES (%s, %s, %s)",
-                    (mobile, code, datetime.now()))
+                    (mobile, code, now_ist()))
         conn.commit()
         cur.close(); conn.close()
         send_sms(mobile, "Your Sewa Setu OTP is %s. Valid for 5 minutes." % code)
@@ -176,7 +181,7 @@ def verify():
         row = cur.fetchone()
         cur.close(); conn.close()
         if row and row[0] == code:
-            age = (datetime.now() - row[1]).total_seconds()
+            age = (now_ist() - row[1]).total_seconds()
             if age > OTP_VALIDITY_SECONDS:
                 app.logger.warning("otp expired mobile=%s age=%ds" % (mobile, int(age)))
                 flash("OTP expired. Please request a new OTP.")
@@ -287,7 +292,7 @@ def handle_submission():
         flash("Applicant must be above %d years of age to be eligible." % MIN_AGE)
         return redirect(url_for("form_step", step=1))
 
-    if datetime.now() > SCHEME_DEADLINE:
+    if now_ist() > SCHEME_DEADLINE:
         flash("The application deadline has passed.")
         return redirect(url_for("index"))
 
@@ -311,7 +316,7 @@ def handle_submission():
            RETURNING id""",
         (app_no, name, mobile, dob, gender, marital, husband_name,
          husband_employer, village, block, bank_account, ifsc, doc_path,
-         datetime.now()))
+         now_ist()))
     new_id = cur.fetchone()[0]
 
     # status portal account; password is DOB as DDMMYYYY per dept. circular
@@ -485,7 +490,7 @@ def admin_dashboard():
     cur.execute("SELECT status, count(*) FROM applications GROUP BY status")
     by_status = cur.fetchall()
     cur.execute("SELECT count(*) FROM applications WHERE status = 'PENDING' "
-                "AND submitted_at < %s", (datetime.now() - timedelta(days=SLA_DAYS),))
+                "AND submitted_at < %s", (now_ist() - timedelta(days=SLA_DAYS),))
     overdue = cur.fetchone()[0]
     cur.execute("SELECT block, count(*) FROM applications WHERE status = 'PENDING' "
                 "GROUP BY block ORDER BY count(*) DESC")
@@ -536,7 +541,7 @@ def admin_approve(app_id):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("UPDATE applications SET status = 'APPROVED', decided_at = %s "
-                "WHERE id = %s", (datetime.now(), app_id))
+                "WHERE id = %s", (now_ist(), app_id))
     conn.commit()
     cur.close(); conn.close()
     flash("Application approved.")
@@ -550,7 +555,7 @@ def admin_reject(app_id):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("UPDATE applications SET status = 'REJECTED', decided_at = %s "
-                "WHERE id = %s", (datetime.now(), app_id))
+                "WHERE id = %s", (now_ist(), app_id))
     conn.commit()
     cur.close(); conn.close()
     flash("Application rejected.")
