@@ -289,7 +289,7 @@ def handle_submission():
     today = date.today()
     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
     if age < MIN_AGE:
-        flash("Applicant must be above %d years of age to be eligible." % MIN_AGE)
+        flash("You must be at least %d years old on the day you apply to be eligible." % MIN_AGE)
         return redirect(url_for("form_step", step=1))
 
     if now_ist() > SCHEME_DEADLINE:
