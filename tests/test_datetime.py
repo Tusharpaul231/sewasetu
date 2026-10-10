@@ -9,3 +9,7 @@ def test_countdown_uses_ist_not_server_time(monkeypatch):
 def test_window_is_closed_after_midnight_ist(monkeypatch):
     monkeypatch.setattr(app_module, "now_ist", lambda: datetime(2026, 11, 1, 0, 0, 30))
     assert app_module.deadline_remaining() is None
+
+def test_application_number_year_follows_ist(monkeypatch):
+    monkeypatch.setattr(app_module, "now_ist", lambda: datetime(2027, 1, 1, 0, 10))
+    assert app_module.new_application_no().startswith("SSP27")
