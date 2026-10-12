@@ -14,6 +14,7 @@ import random
 import hashlib
 import configparser
 import re
+import secrets
 from datetime import datetime, date, timedelta, timezone
 
 import requests
@@ -44,6 +45,11 @@ MIN_AGE = config.getint("pension", "min_age")
 SLA_DAYS = config.getint("pension", "sla_days")
 ALLOWED_UPLOAD_EXTENSIONS = (".pdf", ".jpg", ".jpeg")
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024        # 5 MB doc upload limit
+OTP_MAX_REQUESTS = 5            # OTP SMS per mobile number...
+OTP_REQUEST_WINDOW = 600        # ...per 10 minutes (bug 7)
+OTP_MAX_WRONG_GUESSES = 5       # wrong guesses allowed per OTP (bug 10)
+
+_otp_columns_ready = False
 
 BLOCKS = ["Sonari", "Rajapara", "Dhemaji Pathar", "Borgaon", "Namti", "Khelua"]
 
@@ -141,6 +147,42 @@ def gateway_proxy(subpath):
 # ---------------------------------------------------------------------------
 
 @app.route("/apply", methods=["GET", "POST"])
+def ensure_otp_columns():
+    """Adds the columns this feature needs to an existing database. Safe to repeat."""
+    global _otp_columns_ready
+    if _otp_columns_ready:
+        return
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("ALTER TABLE otps ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0")
+        cur.execute("ALTER TABLE otps ADD COLUMN IF NOT EXISTS used BOOLEAN NOT NULL DEFAULT FALSE")
+        conn.commit()
+    except Exception:
+        conn.rollback()          # another worker added them at the same moment
+    cur.close(); conn.close()
+    _otp_columns_ready = True
+
+
+def issue_otp(mobile):
+    """Create and SMS a new OTP. Returns an error message, or None on success."""
+    ensure_otp_columns()
+    conn = get_db()
+    cur = conn.cursor()
+    since = now_ist() - timedelta(seconds=OTP_REQUEST_WINDOW)
+    cur.execute("SELECT count(*) FROM otps WHERE mobile = %s AND created_at > %s",
+                (mobile, since))
+    if cur.fetchone()[0] >= OTP_MAX_REQUESTS:
+        cur.close(); conn.close()
+        return "Too many OTP requests for this number. Please wait 10 minutes and try again."
+    code = "%06d" % secrets.randbelow(1000000)          # bug 8: secure generator
+    cur.execute("INSERT INTO otps (mobile, code, created_at) VALUES (%s, %s, %s)",
+                (mobile, code, now_ist()))
+    conn.commit()
+    cur.close(); conn.close()
+    send_sms(mobile, "Your Sewa Setu OTP is %s. Valid for 5 minutes." % code)
+    return None
+
 def apply():
     if deadline_remaining() is None:
         flash("The application window for this scheme has closed.")
@@ -160,14 +202,10 @@ def apply():
         if error:
             flash(error)
             return render_template("apply.html", captcha_q=make_captcha())
-        code = str(random.randint(100000, 999999))
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO otps (mobile, code, created_at) VALUES (%s, %s, %s)",
-                    (mobile, code, now_ist()))
-        conn.commit()
-        cur.close(); conn.close()
-        send_sms(mobile, "Your Sewa Setu OTP is %s. Valid for 5 minutes." % code)
+        error = issue_otp(mobile)
+        if error:
+            flash(error)
+            return render_template("apply.html", captcha_q=make_captcha()), 429
         session.permanent = True
         session["apply_mobile"] = mobile
         return redirect(url_for("verify"))
@@ -179,6 +217,15 @@ def make_captcha():
     session["captcha_answer"] = a + b
     return "%d + %d" % (a, b)
 
+@app.route("/resend", methods=["POST"])
+def resend_otp():
+    mobile = session.get("apply_mobile")
+    if not mobile:
+        return redirect(url_for("apply"))
+    error = issue_otp(mobile)
+    flash(error or "A new OTP has been sent to %s." % mobile)
+    return redirect(url_for("verify"))
+
 
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
@@ -186,22 +233,53 @@ def verify():
     if not mobile:
         return redirect(url_for("apply"))
     if request.method == "POST":
+        ensure_otp_columns()
         code = request.form.get("otp", "").strip()
+        if not re.fullmatch(r"[0-9]{6}", code):                       # bug 11
+            flash("The OTP is 6 digits (numbers only). Please check the SMS and try again.")
+            return render_template("verify.html", mobile=mobile)
+
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT code, created_at FROM otps WHERE mobile = %s "
-                    "ORDER BY id DESC LIMIT 1", (mobile,))
+        cur.execute("SELECT id, code, created_at, attempts, used FROM otps "
+                    "WHERE mobile = %s ORDER BY id DESC LIMIT 1", (mobile,))
         row = cur.fetchone()
-        cur.close(); conn.close()
-        if row and row[0] == code:
-            age = (now_ist() - row[1]).total_seconds()
-            if age > OTP_VALIDITY_SECONDS:
-                app.logger.warning("otp expired mobile=%s age=%ds" % (mobile, int(age)))
-                flash("OTP expired. Please request a new OTP.")
-                return redirect(url_for("apply"))
+        if row is None:
+            cur.close(); conn.close()
+            flash("No OTP was found for this number. Please request a new one.")
+            return redirect(url_for("apply"))
+        otp_id, saved_code, created_at, attempts, used = row
+
+        if used:                                                       # bug 13
+            cur.close(); conn.close()
+            flash("This OTP has already been used. Please request a new one.")
+            return render_template("verify.html", mobile=mobile)
+        age = (now_ist() - created_at).total_seconds()
+        if age > OTP_VALIDITY_SECONDS:
+            cur.close(); conn.close()
+            app.logger.warning("otp expired mobile=%s age=%ds" % (mobile, int(age)))
+            flash("This OTP has expired. Please request a new one.")
+            return render_template("verify.html", mobile=mobile)
+        if attempts >= OTP_MAX_WRONG_GUESSES:                          # bug 10
+            cur.close(); conn.close()
+            flash("Too many wrong attempts. Please request a new OTP.")
+            return render_template("verify.html", mobile=mobile)
+
+        if secrets.compare_digest(saved_code, code):
+            cur.execute("UPDATE otps SET used = TRUE WHERE id = %s", (otp_id,))
+            conn.commit()
+            cur.close(); conn.close()
             session["verified_mobile"] = mobile
             return redirect(url_for("form_step", step=1))
-        flash("Invalid OTP.")
+
+        cur.execute("UPDATE otps SET attempts = attempts + 1 WHERE id = %s", (otp_id,))
+        conn.commit()
+        cur.close(); conn.close()
+        left = OTP_MAX_WRONG_GUESSES - attempts - 1                   # bug 14
+        if left > 0:
+            flash("That OTP is not correct. You have %d attempt(s) left." % left)
+        else:
+            flash("That OTP is not correct. Please request a new OTP.")
     return render_template("verify.html", mobile=mobile)
 
 

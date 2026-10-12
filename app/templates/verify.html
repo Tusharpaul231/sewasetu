@@ -2,10 +2,18 @@
 {% block content %}
 <div class="steps"><b>Step 1 of 6:</b> Mobile Verification</div>
 <h2>Enter OTP</h2>
-<p class="note">An OTP has been sent to {{ mobile }}.</p>
+<p class="note">An OTP has been sent to {{ mobile }}. It is valid for 5 minutes.</p>
 <form method="post">
   <label>OTP</label>
-  <input type="text" name="otp" maxlength="6" style="max-width:160px">
+  <input type="text" name="otp" maxlength="6" style="max-width:160px"
+         inputmode="numeric" pattern="[0-9]{6}" required autocomplete="one-time-code"
+         title="6-digit OTP from the SMS"
+         oninput="this.value = this.value.replace(/[^0-9]/g, '')">
   <p><button class="btn" type="submit">Verify</button></p>
+</form>
+<form method="post" action="{{ url_for('resend_otp') }}">
+  <p class="note">Did not receive it?
+  <button class="btn" type="submit">Resend OTP</button>
+  &nbsp; <a href="{{ url_for('apply') }}">Wrong number? Change it</a></p>
 </form>
 {% endblock %}
