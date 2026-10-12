@@ -30,6 +30,7 @@ config.read(os.path.join(BASE_DIR, "config", "app.ini"))
 app = Flask(__name__)
 app.secret_key = config.get("app", "secret_key")
 app.config["PERMANENT_SESSION_LIFETIME"] = 300
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "sewasetu@123"
@@ -41,6 +42,8 @@ SCHEME_DEADLINE = datetime.strptime(config.get("pension", "scheme_deadline"),
                                     "%Y-%m-%d %H:%M")
 MIN_AGE = config.getint("pension", "min_age")
 SLA_DAYS = config.getint("pension", "sla_days")
+ALLOWED_UPLOAD_EXTENSIONS = (".pdf", ".jpg", ".jpeg")
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024        # 5 MB doc upload limit
 
 BLOCKS = ["Sonari", "Rajapara", "Dhemaji Pathar", "Borgaon", "Namti", "Khelua"]
 
@@ -229,15 +232,15 @@ def upload():
     if request.method == "POST":
         f = request.files.get("document")
         if f is None or f.filename == "":
-            flash("ERR_VAL_47")
+            flash("No file was chosen. Please choose a file to upload.")
             return render_template("upload.html")
         filename = f.filename.lower()
         content = f.read()
-        if not filename.endswith(".pdf"):
-            flash("ERR_VAL_47")
+        if not filename.endswith(ALLOWED_UPLOAD_EXTENSIONS):
+            flash("This file type is not accepted. Please upload a PDF or image file.")
             return render_template("upload.html")
-        if len(content) > 102400:
-            flash("ERR_VAL_47")
+        if len(content) > MAX_UPLOAD_BYTES:
+            flash("The file is too large. Please upload a file smaller than 5 MB.")
             return render_template("upload.html")
         os.makedirs(UPLOAD_DIR, exist_ok=True)
         path = os.path.join(UPLOAD_DIR, "%s_%s" % (session["verified_mobile"], filename))
