@@ -13,6 +13,7 @@ import csv
 import random
 import hashlib
 import configparser
+import re
 from datetime import datetime, date, timedelta, timezone
 
 import requests
@@ -144,8 +145,8 @@ def apply():
     if request.method == "POST":
         mobile = request.form.get("mobile", "").strip()
         captcha = request.form.get("captcha", "")
-        if len(mobile) != 10 or not mobile.isdigit():
-            flash("Something went wrong. Please try again.")
+        if not re.fullmatch(r"[6-9][0-9]{9}", mobile):
+            flash("Please enter a valid 10-digit Indian mobile number.")
             return render_template("apply.html", captcha_q=make_captcha())
         code = str(random.randint(100000, 999999))
         conn = get_db()
