@@ -145,8 +145,17 @@ def apply():
     if request.method == "POST":
         mobile = request.form.get("mobile", "").strip()
         captcha = request.form.get("captcha", "")
-        if not re.fullmatch(r"[6-9][0-9]{9}", mobile):
-            flash("Please enter a valid 10-digit Indian mobile number.")
+        error = None
+        if not mobile:
+            error = "Please enter your mobile number."
+        elif not re.fullmatch(r"[0-9]+", mobile):
+            error = "The mobile number should contain digits only (0-9), with no spaces or letters."
+        elif len(mobile) != 10:
+            error = "The mobile number should have exactly 10 digits. You entered %d." % len(mobile)
+        elif mobile[0] not in "6789":
+            error = "Please enter a valid Indian mobile number."
+        if error:
+            flash(error)
             return render_template("apply.html", captcha_q=make_captcha())
         code = str(random.randint(100000, 999999))
         conn = get_db()
@@ -266,13 +275,25 @@ def handle_submission():
     ifsc = data.get("ifsc", "").strip().upper()
     dob_raw = data.get("dob", "").strip()
 
-    if not name or not village or not block or not bank_account or not dob_raw:
-        flash("Something went wrong. Please try again.")
+    missing = []
+    if not name:
+        missing.append("full name")
+    if not dob_raw:
+        missing.append("date of birth")
+    if not village:
+        missing.append("village")
+    if not block:
+        missing.append("block")
+    if not bank_account:
+        missing.append("bank account number")
+    if missing:
+        flash("Please fill in your " + ", ".join(missing) + " before submitting.")
         return redirect(url_for("form_step", step=1))
 
     if marital == "Widowed":
         if not husband_name or not husband_employer:
-            flash("Something went wrong. Please try again.")
+            flash("You selected 'Widowed'. Please enter your late husband's name "
+                  "and his last employer.")
             return redirect(url_for("form_step", step=1))
 
     # lenient date parsing to reduce rejections (CR-2024-117)
@@ -284,7 +305,8 @@ def handle_submission():
         except ValueError:
             continue
     if dob is None:
-        flash("Something went wrong. Please try again.")
+        flash("The date of birth \"%s\" is not a valid date. Please write it as "
+              "DD/MM/YYYY (day, month, year), for example 25/02/1960." % dob_raw)
         return redirect(url_for("form_step", step=1))
 
     today = date.today()
