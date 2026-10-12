@@ -55,8 +55,8 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 26 | The page promises "JPG or PDF, 5 MB", but the code accepts only PDF under 100 KB. | Open |
-| 27 | All upload failures show `ERR_VAL_47` with no explanation. | Open |
+| 26 | The page promises "JPG or PDF, 5 MB", but the code accepts only PDF under 100 KB. | Fixed |
+| 27 | All upload failures show `ERR_VAL_47` with no explanation. | Fixed |
 | 28 | The file type is judged by name only, and the client's filename is part of the saved path (path traversal). | Open |
  
 ## `/declaration` and submission
