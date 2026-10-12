@@ -5,16 +5,16 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 1 | The "closes in N hours" countdown used server time (UTC in the container), so it was off by 5.5 hours. | Fixed |
-| 2 | The text says "above 60", but the rule is 60 or older. | Fixed |
+| 1 | The "closes in N hours" countdown used server time (UTC in the container), so it was off by 5.5 hours. | Open |
+| 2 | The text says "above 60", but the rule is 60 or older. | Open |
 
 ## `/apply` (mobile and OTP request)
  
 | # | Bug | Status |
 |---|---|---|
 | 3 | The security check is never validated, so a wrong answer (5+3 ≠ 11) or a blank still passes. | Open  |
-| 4 | The mobile check is `len == 10 and isdigit()`. It accepts non-English digits and doesn't require an Indian mobile to start with 6–9, so `0000000000` passes. | Fixed |
-| 5 | The mobile field has no numeric restriction in the browser (`type="text"`), so letters can be typed and are only rejected on submit. | Fixed |
+| 4 | The mobile check is `len == 10 and isdigit()`. It accepts non-English digits and doesn't require an Indian mobile to start with 6–9, so `0000000000` passes. | Open |
+| 5 | The mobile field has no numeric restriction in the browser (`type="text"`), so letters can be typed and are only rejected on submit. | Open |
 | 6 | Every validation error is "Something went wrong. Please try again." | Open |
 | 7 | OTP requests are unlimited per number, which allows SMS-bombing anyone. | Open |
 | 8 | The OTP comes from `random.randint`, which is not cryptographically secure. | Open |
@@ -71,3 +71,43 @@
 | 34 | There is no way to edit or withdraw an application after submitting. | Open |
 | 35 | The declaration checkbox is enforced only in the browser, not on the server. | Open |
 | 36 | All timestamps use `datetime.now()`, which depends on the server's timezone. | Open |
+
+## Acknowledgment PDF `/ack/<id>.pdf`
+
+| # | Bug | Status |
+|---|---|---|
+| 37 | It uses a Latin-only font with a bare `except` that prints `?`, so Assamese and other scripts show as `????`. | Open |
+| 38 | There is no login check and no ownership check, so anyone can download anyone's PDF. | Open |
+| 39 | The PDF shows the raw status, not the legal one (an overdue file shows as pending). | Open |
+
+## `/status` and `/status/reset` (citizen login)
+
+| # | Bug | Status |
+|---|---|---|
+| 40 | Login has no throttle, and the password is just the DOB, so it is easy to guess. | Open (throttled) |
+| 41 | The error is "Something went wrong" and doesn't say that the mobile number or password is wrong. | Open |
+| 42 | SQL injection in password reset: `' OR '1'='1` resets the first account. | Open |
+| 43 | Reset is unlimited, so anyone can reset any account repeatedly. | Open |
+| 44 | Passwords are unsalted SHA-256 of the DOB. This is weak and crackable in seconds. | Open |
+| 45 | The login mobile field has `maxlength="10"`, so `+91` can't be typed. | Open |
+
+## `/application/<id>` (citizen view)
+
+| # | Bug | Status |
+|---|---|---|
+| 46 | It checks only "logged in", not ownership. Any citizen can read any of about 100,000 records (name, mobile, DOB, bank account) by changing the ID in the URL. | Open |
+| 47 | An overdue untouched file shows PENDING, but the law (RTPS) requires it to show as approved. | Open |
+
+## Admin `/admin/...`
+
+| # | Bug | Status |
+|---|---|---|
+| 48 | Approve and reject check `logged_in`, not `admin`, so any citizen can approve or reject any application. | Open |
+| 49 | The admin password `sewasetu@123` is hardcoded in the source. | Open |
+| 50 | The session secret and DB password are committed in `app.ini`. | Open |
+| 51 | An already-decided application can be flipped, and `decided_by` is never recorded. | Open |
+| 52 | Officers can decide a file that is already deemed approved by law. | Open |
+| 53 | The list page returns a 500 on `?page=abc`. | Open |
+| 54 | The dashboard counts overdue files using server time and the raw status. | Open |
+| 55 | There is only one shared admin login, so actions can't be attributed to an officer. | Open |
+| 56 | There is no CSRF token on admin actions. SameSite cookies now cover most cases. | Open |
