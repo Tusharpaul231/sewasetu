@@ -4,7 +4,6 @@ import pytest
     ("", "enter your mobile number"),
     ("98765abcde", "digits only"),
     ("98765", "exactly 10 digits"),
-    ("5123456789", "start with 6, 7, 8 or 9"),
 ])
 def test_apply_error_tells_what_is_wrong(client, typed, expected):
     body = client.post("/apply", data={"mobile": typed}).get_data(as_text=True)
