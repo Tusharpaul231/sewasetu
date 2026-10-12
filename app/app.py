@@ -34,9 +34,9 @@ app.config["PERMANENT_SESSION_LIFETIME"] = 300
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "sewasetu@123"
 
-SMS_GATEWAY_URL = config.get("app", "sms_gateway_url")
+SMS_GATEWAY_URL = os.environ.get("SMS_GATEWAY_URL", config.get("app", "sms_gateway_url"))
 OTP_VALIDITY_SECONDS = config.getint("app", "otp_validity_seconds")
-UPLOAD_DIR = config.get("app", "upload_dir")
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", config.get("app", "upload_dir"))
 SCHEME_DEADLINE = datetime.strptime(config.get("pension", "scheme_deadline"),
                                     "%Y-%m-%d %H:%M")
 MIN_AGE = config.getint("pension", "min_age")
@@ -58,11 +58,11 @@ except Exception:
 
 def get_db():
     return psycopg2.connect(
-        host=config.get("database", "host"),
-        port=config.get("database", "port"),
-        dbname=config.get("database", "name"),
-        user=config.get("database", "user"),
-        password=config.get("database", "password"),
+        host=os.environ.get("DB_HOST", config.get("database", "host")),
+        port=os.environ.get("DB_PORT", config.get("database", "port")),
+        dbname=os.environ.get("DB_NAME", config.get("database", "name")),
+        user=os.environ.get("DB_USER", config.get("database", "user")),
+        password=os.environ.get("DB_PASSWORD", config.get("database", "password")),
     )
 
 
