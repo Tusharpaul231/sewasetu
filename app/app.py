@@ -146,7 +146,6 @@ def gateway_proxy(subpath):
 # Application flow: mobile -> OTP -> form steps -> upload -> declaration
 # ---------------------------------------------------------------------------
 
-@app.route("/apply", methods=["GET", "POST"])
 def ensure_otp_columns():
     """Adds the columns this feature needs to an existing database. Safe to repeat."""
     global _otp_columns_ready
@@ -183,6 +182,7 @@ def issue_otp(mobile):
     send_sms(mobile, "Your Sewa Setu OTP is %s. Valid for 5 minutes." % code)
     return None
 
+@app.route("/apply", methods=["GET", "POST"])
 def apply():
     if deadline_remaining() is None:
         flash("The application window for this scheme has closed.")
