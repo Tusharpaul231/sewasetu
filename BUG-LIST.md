@@ -13,8 +13,8 @@
 | # | Bug | Status |
 |---|---|---|
 | 3 | The security check is never validated, so a wrong answer (5+3 ≠ 11) or a blank still passes. | Open  |
-| 4 | The mobile check is `len == 10 and isdigit()`. It accepts non-English digits and doesn't require an Indian mobile to start with 6–9, so `0000000000` passes. | Open |
-| 5 | The mobile field has no numeric restriction in the browser (`type="text"`), so letters can be typed and are only rejected on submit. | Open |
+| 4 | The mobile check is `len == 10 and isdigit()`. It accepts non-English digits and doesn't require an Indian mobile to start with 6–9, so `0000000000` passes. | Fixed |
+| 5 | The mobile field has no numeric restriction in the browser (`type="text"`), so letters can be typed and are only rejected on submit. | Fixed |
 | 6 | Every validation error is "Something went wrong. Please try again." | Open |
 | 7 | OTP requests are unlimited per number, which allows SMS-bombing anyone. | Open |
 | 8 | The OTP comes from `random.randint`, which is not cryptographically secure. | Open |
