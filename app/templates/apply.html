@@ -4,7 +4,11 @@
 <h2>Mobile Verification</h2>
 <form method="post">
   <label>Mobile Number</label>
-  <input type="text" name="mobile" maxlength="10" placeholder="10 digit mobile number">
+  <input type="tel" name="mobile" maxlength="10" inputmode="numeric"
+       pattern="[6-9][0-9]{9}" required autocomplete="tel-national"
+       title="10-digit mobile number starting with 6, 7, 8 or 9"
+       placeholder="10-digit mobile number"
+       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
   <label>Security Check: What is {{ captcha_q }}?</label>
   <input type="text" name="captcha" style="max-width:120px">
   <p><button class="btn" type="submit">Send OTP</button></p>
