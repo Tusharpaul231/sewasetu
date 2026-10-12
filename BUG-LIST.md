@@ -16,19 +16,19 @@
 | 4 | The mobile check is `len == 10 and isdigit()`. It accepts non-English digits and doesn't require an Indian mobile to start with 6–9, so `0000000000` passes. | Fixed |
 | 5 | The mobile field has no numeric restriction in the browser (`type="text"`), so letters can be typed and are only rejected on submit. | Fixed |
 | 6 | Every validation error is "Something went wrong. Please try again." | Open |
-| 7 | OTP requests are unlimited per number, which allows SMS-bombing anyone. | Open |
-| 8 | The OTP comes from `random.randint`, which is not cryptographically secure. | Open |
+| 7 | OTP requests are unlimited per number, which allows SMS-bombing anyone. | Fixed |
+| 8 | The OTP comes from `random.randint`, which is not cryptographically secure. | Fixed |
 | 9 | The window-closed check uses server-local time, not IST. | Open |
  
 ## `/verify` (OTP entry)
  
 | # | Bug | Status |
 |---|---|---|
-| 10 | OTP guesses are unlimited, so a 6-digit code can be brute-forced. | Open |
-| 11 | The OTP field accepts any characters (no numeric input or pattern). | Open |
-| 12 | There is no "resend OTP" option. After a wrong code the user has to start over. | Open |
-| 13 | A used OTP is never invalidated and can be reused until it expires. | Open |
-| 14 | "Invalid OTP." gives no guidance. | Open |
+| 10 | OTP guesses are unlimited, so a 6-digit code can be brute-forced. | Fixed |
+| 11 | The OTP field accepts any characters (no numeric input or pattern). | Fixed |
+| 12 | There is no "resend OTP" option. After a wrong code the user has to start over. | Fixed |
+| 13 | A used OTP is never invalidated and can be reused until it expires. | Fixed |
+| 14 | "Invalid OTP." gives no guidance. | Fixed |
 
 ## `/form/1` (personal details)
  
