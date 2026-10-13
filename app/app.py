@@ -371,12 +371,6 @@ def handle_submission():
         flash("Please fill in your " + ", ".join(missing) + " before submitting.")
         return redirect(url_for("form_step", step=1))
 
-    if marital == "Widowed":
-        if not husband_name or not husband_employer:
-            flash("You selected 'Widowed'. Please enter your late husband's name "
-                  "and his last employer.")
-            return redirect(url_for("form_step", step=1))
-
     # lenient date parsing to reduce rejections (CR-2024-117)
     dob = None
     for fmt in ("%m/%d/%Y", "%d/%m/%Y"):
@@ -393,7 +387,13 @@ def handle_submission():
     today = date.today()
     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
     if age < MIN_AGE:
-        flash("You must be at least %d years old on the day you apply to be eligible." % MIN_AGE)
+        try:
+            eligible_from = dob.replace(year=dob.year + MIN_AGE)
+        except ValueError:                      # born on 29 February
+            eligible_from = date(dob.year + MIN_AGE, 3, 1)
+        flash("You must be at least %d years old on the day you apply. With the date of "
+              "birth you entered (%s) you can apply from %s."
+              % (MIN_AGE, dob.strftime("%d/%m/%Y"), eligible_from.strftime("%d/%m/%Y")))
         return redirect(url_for("form_step", step=1))
 
     if now_ist() > SCHEME_DEADLINE:
