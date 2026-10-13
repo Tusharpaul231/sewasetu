@@ -34,14 +34,14 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 15 | Dates are parsed `MM/DD/YYYY` first, so 01/02/1955 is stored as 2 January. This gives a wrong DOB, a wrong age check and a wrong DOB-password. | Open |
-| 16 | Common date formats (25-02-1955, 25.02.1955) are rejected. | Open |
+| 15 | Dates are parsed `MM/DD/YYYY` first, so 01/02/1955 is stored as 2 January. This gives a wrong DOB, a wrong age check and a wrong DOB-password. Solution is to make it as a calender. | Open |
+| 16 | Common date formats (25-02-1955, 25.02.1955) are rejected. Solution is to make it as a calender.  | Open |
 | 17 | Validation runs only at final submit, and any error sends the user back to step 1 with "Something went wrong". | Open |
-| 18 | Widowed applicants must give their husband's *current* employer. The husband fields show to everyone. | Open |
-| 19 | The age error says "must be above 60", which is wrong and gives no date. | Open |
+| 18 | Husband's name and employer should be optional. For female widowed and male applicants | Fixed |
+| 19 | The age error says "must be above 60", which is wrong and gives no date. | Fixed |
 | 20 | The name is cut to 20 bytes. Indic letters are 3 bytes each, so names are cut mid-name or mid-character. | Open |
 | 21 | The session lasts 5 minutes, so slow first-time users are logged out mid-form. | Open |
-| 22 | Gender is optional and can be saved blank. | Open |
+| 22 | Gender is optional and can be saved blank. | Fixed (with #19)|
  
 ## `/form/2` and `/form/3` (address and bank)
  
