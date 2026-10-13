@@ -4,9 +4,9 @@
 <h2>Bank Details for Pension Disbursement</h2>
 <form method="post">
   <label>Bank Account Number</label>
-  <input type="text" name="bank_account" value="{{ data.get('bank_account','') }}">
+  <input type="text" name="bank_account" value="{{ data.get('bank_account','') }}" required>
   <label>IFSC Code</label>
-  <input type="text" name="ifsc" value="{{ data.get('ifsc','') }}">
+  <input type="text" name="ifsc" value="{{ data.get('ifsc','') }}" required>
   <p class="note">Pension will be credited by DBT to this account. Ensure the account
   is in the name of the applicant.</p>
   <p><button class="btn" type="submit">Save &amp; Continue</button></p>
