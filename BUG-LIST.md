@@ -111,3 +111,33 @@
 | 54 | The dashboard counts overdue files using server time and the raw status. | Open |
 | 55 | There is only one shared admin login, so actions can't be attributed to an officer. | Open |
 | 56 | There is no CSRF token on admin actions. SameSite cookies now cover most cases. | Open |
+
+## SMS gateway proxy `/__gateway/`
+
+| # | Bug | Status |
+|---|---|---|
+| 57 | The whole SMS console is public and lists every applicant's mobile number and message text. | Open |
+| 58 | Any sub-path and query is forwarded to the internal gateway. | Open |
+| 59 | Anyone who knows a number can read its OTP via `api/messages?to=<number>`. This comes from the simulated phone network and was kept for the assessor. | Open |
+
+## Background job, config and deployment
+
+| # | Bug | Status |
+|---|---|---|
+| 60 | The deemed-approval job reads `config/settings.ini`, which was renamed to `app.ini` (CR-2026-031). It crashed on every run from 15 March, leaving about 4,459 files unapproved. | Open |
+| 61 | The job ran under cron in a container, so failures were invisible. | Open |
+| 62 | The scheduler container had no timezone, so "2 AM" ran at 7:30 AM IST. | Open |
+| 63 | A new DB connection is opened for every request and leaked on error paths, with no pool and no indexes on `mobile` or `(status, submitted_at)`. This matches the 27,580 "too many clients" log errors at month-end. Treat this as the strongest hypothesis, not a measured cause. | Open |
+| 64 | The compose file has no restart policy, no log rotation, no backups, no healthcheck and the default DB password. | Open |
+| 65 | The PDF decorative border loop (4,000 line draws) is still in the code. | Open |
+| 66 | Dead code remains (`export_to_excel`, `old_payment_gateway_callback`). | Open |
+
+## Data problems in the production seed
+
+| # | Bug | Status |
+|---|---|---|
+| 67 | 300 Indic names are cut at 20 bytes. The original text was never stored, so it can't be recovered by code. A CSV for the help desk to call those citizens is provided. | Open |
+| 68 | 135 more English names are exactly 20 bytes and may also be cut. | Open |
+| 69 | 4,459 files were stuck PENDING past 15 days. | Open |
+| 70 | 2,761 APPROVED applicants were under 60 at submission going by their stored DOB. This may come from the date swap bug or from genuinely ineligible approvals. It needs human review. | Open |
+| 71 | 436 name-and-DOB pairs appear twice (24 also share a village) under different mobiles. They may be duplicate people. Nothing was deleted. | Open |
