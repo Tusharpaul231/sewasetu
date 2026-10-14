@@ -4,9 +4,14 @@
 <h2>Bank Details for Pension Disbursement</h2>
 <form method="post">
   <label>Bank Account Number</label>
-  <input type="text" name="bank_account" value="{{ data.get('bank_account','') }}" required>
+  <input type="text" name="bank_account" required inputmode="numeric"
+         pattern="[0-9]{8,20}" title="Digits only, 8 to 20 digits"
+         oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+         value="{{ data.get('bank_account','') }}">
   <label>IFSC Code</label>
-  <input type="text" name="ifsc" value="{{ data.get('ifsc','') }}" required>
+  <input type="text" name="ifsc" required maxlength="11" style="text-transform:uppercase"
+         pattern="[A-Za-z]{4}0[A-Za-z0-9]{6}" title="Example: SBIN0001234"
+         value="{{ data.get('ifsc','') }}">
   <p class="note">Pension will be credited by DBT to this account. Ensure the account
   is in the name of the applicant.</p>
   <p><button class="btn" type="submit">Save &amp; Continue</button></p>

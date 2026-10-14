@@ -4,9 +4,11 @@
 <h2>Personal Details</h2>
 <form method="post">
   <label>Full Name of Applicant (as per age proof document)</label>
-  <input type="text" name="applicant_name" value="{{ data.get('applicant_name','') }}" required>
-  <label>Date of Birth (DD/MM/YYYY)</label>
-  <input type="text" name="dob" placeholder="DD/MM/YYYY" value="{{ data.get('dob','') }}" required>
+  <input type="text" name="applicant_name" required minlength="2"
+         value="{{ data.get('applicant_name','') }}">
+  <label>Date of Birth</label>
+  <input type="date" name="dob" id="dob" required min="1900-01-01"
+         value="{{ data.get('dob','') }}">
   <label>Gender</label>
   <select name="gender" required>
     <option value="">--Select--</option>
@@ -28,4 +30,13 @@
   <p class="note">Fields marked above are mandatory as applicable.</p>
   <p><button class="btn" type="submit">Save &amp; Continue</button></p>
 </form>
+<script>
+  (function () {
+    var d = new Date();
+    d.setFullYear(d.getFullYear() - 60);
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    document.getElementById('dob').max =
+        d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  })();
+</script>
 {% endblock %}

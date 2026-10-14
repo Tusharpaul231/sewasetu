@@ -284,6 +284,37 @@ def verify():
 
 
 @app.route("/form/<int:step>", methods=["GET", "POST"])
+def parse_dob(raw):
+    """ISO first (date picker), then day-first typed formats. Never month-first."""
+    raw = (raw or "").strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+        try:
+            d = datetime.strptime(raw, fmt).date()
+        except ValueError:
+            continue
+        if date(1900, 1, 1) <= d <= date.today():
+            return d
+    return None
+
+
+def validate_step(step, form):
+    """Returns an error message for this step, or None if it is fine."""
+    if step == 1:
+        name = " ".join(form.get("applicant_name", "").split())
+        if not any(ch.isalpha() for ch in name):
+            return "Please enter the applicant's full name using letters, for example Ramesh Kumar."
+        if parse_dob(form.get("dob", "")) is None:
+            return "Please choose a valid date of birth (not in the future, and after 1900)."
+    if step == 3:
+        account = re.sub(r"[\s-]", "", form.get("bank_account", ""))
+        if not re.fullmatch(r"[0-9]{8,20}", account):
+            return "The bank account number should contain only digits (8 to 20 of them)."
+        ifsc = form.get("ifsc", "").strip().upper()
+        if ifsc and not re.fullmatch(r"[A-Z]{4}0[A-Z0-9]{6}", ifsc):
+            return ("The IFSC code should be 11 characters: four letters, then 0, then six "
+                    "letters or digits (for example SBIN0001234).")
+    return None
+
 def form_step(step):
     if not session.get("verified_mobile"):
         flash("Session expired. Please verify your mobile number again.")
@@ -292,6 +323,12 @@ def form_step(step):
         abort(404)
     if request.method == "POST":
         data = session.get("form_data", {})
+        error = validate_step(step, request.form)
+        if error:
+            flash(error)
+            shown = dict(data)
+            shown.update(request.form.to_dict())
+            return render_template("form_step%d.html" % step, data=shown, blocks=BLOCKS)
         for k, v in request.form.items():
             data[k] = v
         session["form_data"] = data
@@ -352,7 +389,7 @@ def handle_submission():
     marital = data.get("marital_status", "")
     husband_name = data.get("husband_name", "")
     husband_employer = data.get("husband_employer", "")
-    bank_account = data.get("bank_account", "").strip()
+    bank_account = re.sub(r"[\s-]", "", data.get("bank_account", "").strip())
     ifsc = data.get("ifsc", "").strip().upper()
     dob_raw = data.get("dob", "").strip()
 
@@ -367,12 +404,14 @@ def handle_submission():
         missing.append("block")
     if not bank_account:
         missing.append("bank account number")
+    if not ifsc:
+        missing.append("IFSC code")
     if missing:
         flash("Please fill in your " + ", ".join(missing) + " before submitting.")
         return redirect(url_for("form_step", step=1))
 
     # lenient date parsing to reduce rejections (CR-2024-117)
-    dob = None
+    dob = parse_dob(dob_raw)
     for fmt in ("%m/%d/%Y", "%d/%m/%Y"):
         try:
             dob = datetime.strptime(dob_raw, fmt).date()
