@@ -34,9 +34,9 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 15 | Dates are parsed `MM/DD/YYYY` first, so 01/02/1955 is stored as 2 January. This gives a wrong DOB, a wrong age check and a wrong DOB-password. Solution is to make it as a calender. | Open |
-| 16 | Common date formats (25-02-1955, 25.02.1955) are rejected. Solution is to make it as a calender.  | Open |
-| 17 | Validation runs only at final submit, and any error sends the user back to step 1 with "Something went wrong". | Open |
+| 15 | Dates are parsed `MM/DD/YYYY` first, so 01/02/1955 is stored as 2 January. This gives a wrong DOB, a wrong age check and a wrong DOB-password. Solution is to make it as a calender. | Fixed |
+| 16 | Common date formats (25-02-1955, 25.02.1955) are rejected. Solution is to make it as a calender.  | Fixed |
+| 17 | Validation runs only at final submit, and any error sends the user back to step 1 with "Something went wrong". | Fixed |
 | 18 | Husband's name and employer should be optional. For female widowed and male applicants | Fixed |
 | 19 | The age error says "must be above 60", which is wrong and gives no date. | Fixed |
 | 20 | The name is cut to 20 bytes. Indic letters are 3 bytes each, so names are cut mid-name or mid-character. | Open |
@@ -47,7 +47,7 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 23 | There is no validation of the bank account or IFSC. Anything is accepted. | Open |
+| 23 | There is no validation of the bank account or IFSC. Anything is accepted. | Fixed |
 | 24 | Over-long village or block text crashes the DB insert with a 500. | Open |
 | 25 | The block value isn't checked against the allowed list on the server. | Open |
  
