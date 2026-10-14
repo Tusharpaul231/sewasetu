@@ -282,8 +282,6 @@ def verify():
             flash("That OTP is not correct. Please request a new OTP.")
     return render_template("verify.html", mobile=mobile)
 
-
-@app.route("/form/<int:step>", methods=["GET", "POST"])
 def parse_dob(raw):
     """ISO first (date picker), then day-first typed formats. Never month-first."""
     raw = (raw or "").strip()
@@ -315,6 +313,7 @@ def validate_step(step, form):
                     "letters or digits (for example SBIN0001234).")
     return None
 
+@app.route("/form/<int:step>", methods=["GET", "POST"])
 def form_step(step):
     if not session.get("verified_mobile"):
         flash("Session expired. Please verify your mobile number again.")
