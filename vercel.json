@@ -1,0 +1,5 @@
+{
+  "regions": ["bom1"],
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "crons": [{ "path": "/api/cron/deemed-approval", "schedule": "30 20 * * *" }]
+}

@@ -37,6 +37,7 @@ ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "sewasetu@123"
 
 SMS_GATEWAY_URL = os.environ.get("SMS_GATEWAY_URL", config.get("app", "sms_gateway_url"))
+sslmode=os.environ.get("DB_SSLMODE", "prefer"),
 OTP_VALIDITY_SECONDS = config.getint("app", "otp_validity_seconds")
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", config.get("app", "upload_dir"))
 SCHEME_DEADLINE = datetime.strptime(config.get("pension", "scheme_deadline"),
@@ -91,10 +92,15 @@ def hash_password(p):
 
 def send_sms(mobile, text):
     try:
-        requests.post(SMS_GATEWAY_URL + "/api/send",
-                      json={"to": mobile, "text": text}, timeout=5)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO sms_messages (to_number, text, sent_at, deliver_at) "
+                    "VALUES (%s, %s, now(), now() + (floor(random()*4)+1) * interval '1 second')",
+                    (mobile, text))
+        conn.commit()
+        cur.close(); conn.close()
     except Exception as e:
-        app.logger.error("sms gateway error: %s" % e)
+        app.logger.error("sms store error: %s" % e)
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -127,19 +133,20 @@ def about():
     return render_template("about.html")
 
 
-@app.route("/__gateway/", defaults={"subpath": ""})
-@app.route("/__gateway/<path:subpath>")
-def gateway_proxy(subpath):
-    # Convenience proxy to the internal SMS gateway, so the OTP inbox is reachable
-    # on the main site without opening a second port on the host. The gateway
-    # itself runs only on the internal network.
-    try:
-        r = requests.get(SMS_GATEWAY_URL + "/" + subpath,
-                         params=request.args, timeout=5)
-        return (r.content, r.status_code,
-                {"Content-Type": r.headers.get("Content-Type", "text/html")})
-    except Exception as e:
-        return ("SMS gateway unreachable: %s" % e, 502)
+@app.route("/__gateway/api/messages")
+def gateway_messages():
+    to = request.args.get("to", "").strip()
+    if not (to.isdigit() and 6 <= len(to) <= 15):
+        abort(404)
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, to_number, text, extract(epoch from sent_at), "
+                "extract(epoch from deliver_at), now() >= deliver_at "
+                "FROM sms_messages WHERE to_number = %s ORDER BY id", (to,))
+    out = [{"id": r[0], "to": r[1], "text": r[2] if r[5] else None, "delivered": r[5],
+            "sent_at": float(r[3]), "delivery_at": float(r[4])} for r in cur.fetchall()]
+    cur.close(); conn.close()
+    return jsonify({"messages": out})
 
 
 # ---------------------------------------------------------------------------
@@ -356,11 +363,14 @@ def upload():
         if len(content) > MAX_UPLOAD_BYTES:
             flash("The file is too large. Please upload a file smaller than 5 MB.")
             return render_template("upload.html")
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        path = os.path.join(UPLOAD_DIR, "%s_%s" % (session["verified_mobile"], filename))
-        with open(path, "wb") as out:
-            out.write(content)
-        session["doc_path"] = path
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO documents (mobile, filename, content) VALUES (%s, %s, %s) "
+                    "RETURNING id", (session["verified_mobile"], f.filename[:200], content))
+        doc_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close(); conn.close()
+        session["doc_path"] = "db:%d" % doc_id
         return redirect(url_for("declaration"))
     return render_template("upload.html")
 
@@ -470,11 +480,6 @@ def handle_submission():
     conn.commit()
 
     app.logger.info("generating acknowledgment pdf application=%d" % new_id)
-    pdf_bytes = generate_acknowledgment(cur, new_id)
-    ack_dir = os.path.join(UPLOAD_DIR, "ack")
-    os.makedirs(ack_dir, exist_ok=True)
-    with open(os.path.join(ack_dir, "%d.pdf" % new_id), "wb") as out:
-        out.write(pdf_bytes)
 
     cur.close(); conn.close()
     session.pop("form_data", None)
@@ -568,19 +573,17 @@ def view_application(app_id):
 
 
 @app.route("/ack/<int:app_id>.pdf")
+@app.route("/ack/<int:app_id>.pdf")
 def ack_pdf(app_id):
-    path = os.path.join(UPLOAD_DIR, "ack", "%d.pdf" % app_id)
-    if not os.path.exists(path):
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM applications WHERE id = %s", (app_id,))
-        if not cur.fetchone():
-            cur.close(); conn.close()
-            abort(404)
-        data = generate_acknowledgment(cur, app_id)
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM applications WHERE id = %s", (app_id,))
+    if not cur.fetchone():
         cur.close(); conn.close()
-        return send_file(io.BytesIO(data), mimetype="application/pdf")
-    return send_file(path, mimetype="application/pdf")
+        abort(404)
+    data = generate_acknowledgment(cur, app_id)
+    cur.close(); conn.close()
+    return send_file(io.BytesIO(data), mimetype="application/pdf")
 
 
 @app.route("/status/reset", methods=["GET", "POST"])
@@ -702,6 +705,31 @@ def admin_reject(app_id):
     cur.close(); conn.close()
     flash("Application rejected.")
     return redirect(url_for("admin_list"))
+
+
+@app.route("/api/cron/deemed-approval")
+def cron_deemed_approval():
+    secret = os.environ.get("CRON_SECRET", "")
+    if not secret or request.headers.get("Authorization", "") != "Bearer " + secret:
+        abort(403)
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        WITH done AS (
+            UPDATE applications
+               SET status = 'DEEMED_APPROVED',
+                   decided_at = submitted_at + %s, decided_by = 'RTPS-AUTO'
+             WHERE status = 'PENDING' AND submitted_at <= %s
+         RETURNING application_no, mobile)
+        INSERT INTO sms_messages (to_number, text, sent_at, deliver_at)
+        SELECT mobile, 'Sewa Setu: your pension application ' || application_no ||
+               ' stands approved under the RTPS Act.', now(), now()
+          FROM done
+        RETURNING 1""", (timedelta(days=SLA_DAYS), now_ist() - timedelta(days=SLA_DAYS)))
+    n = len(cur.fetchall())
+    conn.commit()
+    cur.close(); conn.close()
+    return jsonify({"approved": n})
 
 
 # ---------------------------------------------------------------------------

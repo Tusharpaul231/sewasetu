@@ -1,0 +1,5 @@
+seed/
+logs/
+*.mp3
+tests/
+.git
