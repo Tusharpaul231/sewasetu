@@ -38,8 +38,10 @@ def _database():
     cur.execute("CREATE DATABASE %s" % TEST_DB)
     admin.close()
     conn = _connect(TEST_DB)
-    with open(os.path.join(ROOT, "app", "schema.sql"), encoding="utf-8") as fh:
-        conn.cursor().execute(fh.read())
+    for sql_file in (os.path.join("app", "schema.sql"),
+                     os.path.join("supabase", "001_vercel_tables.sql")):
+        with open(os.path.join(ROOT, sql_file), encoding="utf-8") as fh:
+            conn.cursor().execute(fh.read())
     conn.commit()
     conn.close()
     yield
