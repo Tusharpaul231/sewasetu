@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="steps"><b>Step 6 of 6:</b> Declaration</div>
+<div class="steps"><b>Step 6 of 6:</b> Review and Declaration</div>
+<h2>Please check your details</h2>
+<p class="note">If something is wrong, press <b>Change</b> and correct it now.
+After you submit, the details cannot be edited.</p>
+<table class="tbl" style="max-width:640px">
+  <tr><th>Name</th><td>{{ data.get('applicant_name','') }}</td><td><a href="/form/1">Change</a></td></tr>
+  <tr><th>Date of birth</th><td>{{ dob_display }}</td><td><a href="/form/1">Change</a></td></tr>
+  <tr><th>Gender</th><td>{{ data.get('gender','') or '-' }}</td><td><a href="/form/1">Change</a></td></tr>
+  <tr><th>Marital status</th><td>{{ data.get('marital_status','') or '-' }}</td><td><a href="/form/1">Change</a></td></tr>
+  {% if data.get('husband_name') %}
+  <tr><th>Late husband's name</th><td>{{ data.get('husband_name') }}</td><td><a href="/form/1">Change</a></td></tr>
+  {% endif %}
+  <tr><th>Village</th><td>{{ data.get('village','') }}</td><td><a href="/form/2">Change</a></td></tr>
+  <tr><th>Block</th><td>{{ data.get('block','') }}</td><td><a href="/form/2">Change</a></td></tr>
+  <tr><th>Bank account</th><td>{{ data.get('bank_account','') }}</td><td><a href="/form/3">Change</a></td></tr>
+  <tr><th>IFSC</th><td>{{ data.get('ifsc','') or '-' }}</td><td><a href="/form/3">Change</a></td></tr>
+  <tr><th>Age proof document</th><td>{{ 'Uploaded' if has_document else 'Not uploaded' }}</td><td><a href="/upload">Change</a></td></tr>
+</table>
 <h2>Declaration</h2>
 <p>I hereby declare that the information furnished above is true to the best of my
 knowledge and belief. I understand that furnishing false information is punishable

@@ -24,6 +24,8 @@ table.tbl{border-collapse:collapse;width:100%}
 table.tbl td,table.tbl th{border:1px solid #ccd;padding:7px 10px;font-size:14px;text-align:left}
 .steps{font-size:13px;color:#777;margin-bottom:18px}
 .steps b{color:#0b3d6e}
+.backlink{margin:0 0 14px;font-size:14px}
+.backlink a{color:#0b3d6e;text-decoration:none;font-weight:bold}
 </style>
 </head>
 <body>
@@ -33,6 +35,9 @@ table.tbl td,table.tbl th{border:1px solid #ccd;padding:7px 10px;font-size:14px;
 </div>
 <div class="band"></div>
 <div class="container">
+{% block back %}
+<p class="backlink"><a href="/" onclick="goBack(); return false;">&larr; Back to previous page</a></p>
+{% endblock %}
 {% with messages = get_flashed_messages() %}
   {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
 {% endwith %}
@@ -46,5 +51,10 @@ table.tbl td,table.tbl th{border:1px solid #ccd;padding:7px 10px;font-size:14px;
   <a href="/contact">Contact Us</a><br>
   Site designed &amp; developed by Netlink Infosolutions Pvt Ltd. Best viewed in 1024x768.
 </div>
+<script>
+function goBack() {
+  if (history.length > 1) { history.back(); } else { window.location.href = "/"; }
+}
+</script>
 </body>
 </html>

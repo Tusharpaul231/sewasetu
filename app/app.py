@@ -374,7 +374,7 @@ def upload():
         f = request.files.get("document")
         if f is None or f.filename == "":
             flash("No file was chosen. Please choose a file to upload.")
-            return render_template("upload.html")
+            return render_template("upload.html", has_document=bool(session.get("doc_path")))
         filename = f.filename.lower()
         content = f.read()
         if not filename.endswith(ALLOWED_UPLOAD_EXTENSIONS):
@@ -402,7 +402,16 @@ def declaration():
         return redirect(url_for("apply"))
     if request.method == "POST":
         return handle_submission()
-    return render_template("declaration.html")
+    data = dict(session.get("form_data", {}))
+    dob_display = data.get("dob", "")
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+        try:
+            dob_display = datetime.strptime(data.get("dob", ""), fmt).strftime("%d/%m/%Y")
+            break
+        except ValueError:
+            continue
+    return render_template("declaration.html", data=data, dob_display=dob_display,
+                           has_document=bool(session.get("doc_path")))
 
 
 def handle_submission():
