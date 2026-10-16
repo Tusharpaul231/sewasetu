@@ -22,6 +22,7 @@ os.environ.update({
     "DB_USER": DB["user"], "DB_PASSWORD": DB["password"],
     "SMS_GATEWAY_URL": "http://127.0.0.1:9",          # nothing listens: SMS fails fast
     "UPLOAD_DIR": os.path.join(tempfile.gettempdir(), "sewasetu-test-uploads"),
+    "CAPTCHA_ENABLED": "0",
 })
 
 
