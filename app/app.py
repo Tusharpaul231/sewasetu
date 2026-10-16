@@ -15,6 +15,7 @@ import hashlib
 import configparser
 import re
 import secrets
+import hmac
 from datetime import datetime, date, timedelta, timezone
 
 import requests
@@ -49,6 +50,7 @@ MAX_UPLOAD_BYTES = 5 * 1024 * 1024        # 5 MB doc upload limit
 OTP_MAX_REQUESTS = 5            # OTP SMS per mobile number...
 OTP_REQUEST_WINDOW = 600        # ...per 10 minutes (bug 7)
 OTP_MAX_WRONG_GUESSES = 5       # wrong guesses allowed per OTP (bug 10)
+CAPTCHA_ENABLED = os.environ.get("CAPTCHA_ENABLED", "1") != "0"
 
 _otp_columns_ready = False
 
@@ -209,6 +211,9 @@ def apply():
         if error:
             flash(error)
             return render_template("apply.html", captcha_q=make_captcha())
+        if CAPTCHA_ENABLED and not check_captcha(captcha):
+            flash("The security check answer is wrong. Please solve the new sum below and try again.")
+            return render_template("apply.html", captcha_q=make_captcha())
         error = issue_otp(mobile)
         if error:
             flash(error)
@@ -219,10 +224,25 @@ def apply():
     return render_template("apply.html", captcha_q=make_captcha())
 
 
+def _captcha_hash(answer):
+    key = app.secret_key if isinstance(app.secret_key, bytes) else app.secret_key.encode()
+    return hmac.new(key, str(answer).encode(), hashlib.sha256).hexdigest()
+
+
 def make_captcha():
+    if not CAPTCHA_ENABLED:
+        return None
     a, b = random.randint(1, 9), random.randint(1, 9)
-    session["captcha_answer"] = a + b
+    session["captcha_hash"] = _captcha_hash(a + b)
     return "%d + %d" % (a, b)
+
+
+def check_captcha(typed):
+    expected = session.pop("captcha_hash", None)      # one attempt per question
+    typed = (typed or "").strip()
+    if not expected or not re.fullmatch(r"[0-9]{1,2}", typed):
+        return False
+    return hmac.compare_digest(expected, _captcha_hash(int(typed)))
 
 @app.route("/resend", methods=["POST"])
 def resend_otp():

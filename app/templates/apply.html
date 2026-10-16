@@ -9,8 +9,11 @@
        title="10-digit mobile number starting with 6, 7, 8 or 9"
        placeholder="10-digit mobile number"
        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-  <label>Security Check: What is {{ captcha_q }}?</label>
-  <input type="text" name="captcha" style="max-width:120px">
+    {% if captcha_q %}
+    <label>Security Check: What is {{ captcha_q }}?</label>
+    <input type="text" name="captcha" required inputmode="numeric" pattern="[0-9]{1,2}"
+          maxlength="2" autocomplete="off" style="max-width:120px">
+    {% endif %}
   <p><button class="btn" type="submit">Send OTP</button></p>
 </form>
 <p class="note">An OTP will be sent to your mobile number by SMS. OTP is valid for 5 minutes.</p>
