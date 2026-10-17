@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: sewasetu
       POSTGRES_USER: sewasetu
-      POSTGRES_PASSWORD: sewasetu123
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       TZ: Asia/Kolkata
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -15,6 +15,11 @@ services:
     build: ./app
     ports:
       - "8000:8000"
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
     depends_on:
       - db
       - smsgw

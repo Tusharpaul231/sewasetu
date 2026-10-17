@@ -29,13 +29,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 config = configparser.ConfigParser()
 config.read(os.path.join(BASE_DIR, "config", "app.ini"))
 
+
+def _require_secret(name, min_len):
+    """Secrets come from the environment only; refuse to start without them."""
+    value = os.environ.get(name, "")
+    if len(value) < min_len:
+        raise RuntimeError("%s must be set in the environment (at least %d characters)"
+                           % (name, min_len))
+    return value
+
+
 app = Flask(__name__)
-app.secret_key = config.get("app", "secret_key")
+app.secret_key = _require_secret("SECRET_KEY", 16)
 app.config["PERMANENT_SESSION_LIFETIME"] = 300
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "sewasetu@123"
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = _require_secret("ADMIN_PASSWORD", 12)
 
 SMS_GATEWAY_URL = os.environ.get("SMS_GATEWAY_URL", config.get("app", "sms_gateway_url"))
 sslmode=os.environ.get("DB_SSLMODE", "prefer"),
@@ -651,8 +661,11 @@ def reset_password():
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
     if request.method == "POST":
-        if (request.form.get("username") == ADMIN_USERNAME and
-                request.form.get("password") == ADMIN_PASSWORD):
+        user_ok = hmac.compare_digest(request.form.get("username", "").encode("utf-8"),
+                                      ADMIN_USERNAME.encode("utf-8"))
+        pass_ok = hmac.compare_digest(request.form.get("password", "").encode("utf-8"),
+                                      ADMIN_PASSWORD.encode("utf-8"))
+        if user_ok and pass_ok:
             session["logged_in"] = True
             session["admin"] = True
             return redirect(url_for("admin_dashboard"))
