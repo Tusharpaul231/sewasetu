@@ -102,9 +102,9 @@
 
 | # | Bug | Status |
 |---|---|---|
-| 48 | Approve and reject check `logged_in`, not `admin`, so any citizen can approve or reject any application. | Open |
-| 49 | The admin password `sewasetu@123` is hardcoded in the source. | Open |
-| 50 | The session secret and DB password are committed in `app.ini`. | Open |
+| 48 | Approve and reject check `logged_in`, not `admin`, so any citizen can approve or reject any application. | Fixed |
+| 49 | The admin password `sewasetu@123` is hardcoded in the source. | Fixed |
+| 50 | The session secret and DB password are committed in `app.ini`. | Fixed |
 | 51 | An already-decided application can be flipped, and `decided_by` is never recorded. | Open |
 | 52 | Officers can decide a file that is already deemed approved by law. | Open |
 | 53 | The list page returns a 500 on `?page=abc`. | Open |
