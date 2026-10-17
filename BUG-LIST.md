@@ -95,7 +95,7 @@
 
 | # | Bug | Status |
 |---|---|---|
-| 46 | It checks only "logged in", not ownership. Any citizen can read any of about 100,000 records (name, mobile, DOB, bank account) by changing the ID in the URL. | Open |
+| 46 | It checks only "logged in", not ownership. Any citizen can read any of about 100,000 records (name, mobile, DOB, bank account) by changing the ID in the URL. | Fixed |
 | 47 | An overdue untouched file shows PENDING, but the law (RTPS) requires it to show as approved. | Open |
 
 ## Admin `/admin/...`
