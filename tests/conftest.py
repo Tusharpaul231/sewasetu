@@ -23,6 +23,9 @@ os.environ.update({
     "SMS_GATEWAY_URL": "http://127.0.0.1:9",          # nothing listens: SMS fails fast
     "UPLOAD_DIR": os.path.join(tempfile.gettempdir(), "sewasetu-test-uploads"),
     "CAPTCHA_ENABLED": "0",
+    "SECRET_KEY": "test-secret-key-0123456789",
+    "ADMIN_USERNAME": "admin",
+    "ADMIN_PASSWORD": "test-admin-pass",
 })
 
 
