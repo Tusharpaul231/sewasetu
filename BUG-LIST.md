@@ -12,10 +12,10 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 3 | The security check is never validated, so a wrong answer (5+3 ≠ 11) or a blank still passes. | Open  |
+| 3 | The security check is never validated, so a wrong answer (5+3 ≠ 11) or a blank still passes. | Fixed |
 | 4 | The mobile check is `len == 10 and isdigit()`. It accepts non-English digits and doesn't require an Indian mobile to start with 6–9, so `0000000000` passes. | Fixed |
 | 5 | The mobile field has no numeric restriction in the browser (`type="text"`), so letters can be typed and are only rejected on submit. | Fixed |
-| 6 | Every validation error is "Something went wrong. Please try again." | Open |
+| 6 | Every validation error is "Something went wrong. Please try again." | Fixed |
 | 7 | OTP requests are unlimited per number, which allows SMS-bombing anyone. | Fixed |
 | 8 | The OTP comes from `random.randint`, which is not cryptographically secure. | Fixed |
 | 9 | The window-closed check uses server-local time, not IST. | Open |
@@ -63,7 +63,7 @@
  
 | # | Bug | Status |
 |---|---|---|
-| 29 | There is no review step, so mistakes can't be Open before submitting. This is why the help desk gets cancel requests. | Open |
+| 29 | There is no review step, so mistakes can't be Open before submitting. This is why the help desk gets cancel requests. | Fixed |
 | 30 | The acknowledgment PDF is built inside the submit request (including a 4,000-line decorative loop), holding a worker and a DB connection at peak. | Open |
 | 31 | "One application per person" is a check-then-insert, so simultaneous submissions both pass. | Open |
 | 32 | The SMS is sent inside the request with a 5-second timeout. | Open |
