@@ -116,7 +116,7 @@
 
 | # | Bug | Status |
 |---|---|---|
-| 57 | The whole SMS console is public and lists every applicant's mobile number and message text. | Open |
+| 57 | The whole SMS console is public and lists every applicant's mobile number and message text. | Fixed(removed) |
 | 58 | Any sub-path and query is forwarded to the internal gateway. | Open |
 | 59 | Anyone who knows a number can read its OTP via `api/messages?to=<number>`. This comes from the simulated phone network and was kept for the assessor. | Open |
 

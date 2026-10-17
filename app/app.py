@@ -598,6 +598,11 @@ def view_application(app_id):
     cur.close(); conn.close()
     if not row:
         abort(404)
+    # A citizen may only open their own application (row[2] is the mobile number).
+    # Staff are allowed. Everyone else gets the same 404 as a missing id, so the
+    # page does not reveal which application numbers exist.
+    if not session.get("admin") and session.get("portal_mobile") != row[2]:
+        abort(404)
     return render_template("application.html", a=row, app_id=app_id)
 
 
